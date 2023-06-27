@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id       Int      @id @default(autoincrement())
+  email    String   @unique
+  password String
+  profile  profile?
+}
+
+model profile {
+  id            Int       @id @default(autoincrement())
+  first_name    String
+  last_name     String?
+  date_of_birth String?
+  file_path     String?
+  user          users     @relation(fields: [user_id], references: [id])
+  user_id       Int       @unique
+  is_online     Boolean   @default(false)
+  messages      messages?
+  updated_at    DateTime  @default(now())
+  created_at    DateTime  @default(now())
+}
+
+model chats {
+  id              Int       @id @default(autoincrement())
+  chat_name       String
+  image           String
+  unread_messages Int
+  last_message    String
+  messages        messages?
+}
+
+model messages {
+  id        Int     @id @default(autoincrement())
+  chat      chats   @relation(fields: [chat_id], references: [id])
+  chat_id   Int     @unique
+  user      profile @relation(fields: [sender_id], references: [user_id])
+  sender_id Int     @unique
+  message   String
+  files     Json
+}
+
+model friends {
+  id           Int            @id @default(autoincrement())
+  from_user_id Int
+  to_user_id   Int
+  status       RequestStatus?
+}
+
+enum RequestStatus {
+  REQUEST
+  APPROVED
+  REJECTED
+}
