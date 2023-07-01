@@ -14,6 +14,7 @@ import { check } from 'express-validator';
 import userController from "../controllers/user.controller";
 const fileMiddleware = require('../../../middlewares/storageUpload')
 
+router.use(/^\/(?!register|login).*$/,auth);
 
 router.post('/register',[
     check(['email','first_name','password'], (value, meta)=>`${meta.path} is required`).notEmpty(),
@@ -23,10 +24,10 @@ router.post('/login',[
     check(['email','password'], 'Email, password are required').notEmpty(),
 ], authController.login);
 
-router.get('/profile',auth, userController.getProfile);
+router.get('/profile', userController.getProfile);
+router.post('/profile/edit', userController.editProfile);
 
 
-// router.use(/^\/(?!register|login).*$/,auth);
 
 router.use(async (req, res, next) => {
     next(createError.NotFound('Page not found'))

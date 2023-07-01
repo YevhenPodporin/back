@@ -16,6 +16,19 @@ class userController {
             })
         }
     }
+    static editProfile = async (req: Request, res: Response, next: NextFunction)=>{
+
+        const data = await userService.editProfile({user: {...req.body},file:req.file || null})
+        if (data?.error) {
+            res.status(404).json({
+                error: data.error,
+            })
+        } else {
+            res.status(200).json({
+                ...data
+            })
+        }
+    }
 }
 
 export default userController;
