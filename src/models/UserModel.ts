@@ -4,10 +4,13 @@ export interface UserRegisterRequestBody {
     password:string,
     first_name:string,
     last_name:string,
-    date_of_birth?:string,
+    date_of_birth:string,
     file?:Express.Multer.File,
     accessToken?:string
 }
+
+export interface UserRegisterWithoutFile extends Omit<UserRegisterRequestBody,'file'|'accessToken'> {}
+
 export interface UserUpdateProfileBody {
     email?:string,
     first_name?:string,

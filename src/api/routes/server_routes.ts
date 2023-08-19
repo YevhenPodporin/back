@@ -5,38 +5,28 @@ import {
     Response,
     Errback
 } from "express";
-// import auth from '../../../middlewares/auth';
-const createError = require('http-errors')
+import {isHttpError, } from "http-errors";
+
 const router = Router();
 import authController from "../controllers/auth.controller";
-const auth = require('../../../middlewares/auth.js');
-import { check } from 'express-validator';
+
+
 import userController from "../controllers/user.controller";
-const fileMiddleware = require('../../../middlewares/storageUpload')
+import withUploadFile from '../../middlewares/storageUpload';
+import sendFile from "../../middlewares/sendFile";
+import {auth} from "../../middlewares/auth";
+import uploadFileMiddleware from '../../middlewares/storageUpload';
 
-router.use(/^\/(?!register|login).*$/,auth);
+// router.use(/^\/(?!register|login).*$/, auth);
 
-router.post('/register',[
-    check(['email','first_name','password'], (value, meta)=>`${meta.path} is required`).notEmpty(),
-], authController.register);
+router.post('/register',uploadFileMiddleware, authController.register);
 
-router.post('/login',[
-    check(['email','password'], 'Email, password are required').notEmpty(),
-], authController.login);
+router.post('/login', authController.login);
 
 router.get('/profile', userController.getProfile);
 router.post('/profile/edit', userController.editProfile);
 
+router.get('/image/:file_name', sendFile)
 
-
-router.use(async (req, res, next) => {
-    next(createError.NotFound('Page not found'))
-})
-router.use((err:Errback, req: Request, res: Response, next: NextFunction) => {
-    res.status( 500).json({
-        status: 500,
-        message: err
-    })
-})
 
 export default router;
