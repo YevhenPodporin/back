@@ -1,7 +1,7 @@
-import multer, { ErrorCode } from 'multer';
+import multer, {ErrorCode} from 'multer';
 import {NextFunction, Request, Response} from 'express';
 import {userRegisterValidate} from '../validation/userValidation';
-import {UserRegisterWithoutFile} from '../models/UserModel';
+import {UserRegisterWithoutFile} from '../types/UserTypes';
 import {MAX_FILE_SIZE} from "../constants/constants";
 
 const types = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
@@ -9,18 +9,20 @@ const types = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 const fileStorage = multer({
     storage: multer.diskStorage({
         destination: (req, file, cb) => {
-            const body: UserRegisterWithoutFile = req.body
-            const { error} = userRegisterValidate(body)
-            if (error) {
-                const formattedErrors = error.details.map(({message}) => message)
-                cb({
-                        message: JSON.stringify(formattedErrors),
-                        name: 'validation_error'
-                    }, process.cwd() + '/src/storage/files')
-                return;
+            if (file) {
+                const body: UserRegisterWithoutFile = req.body
+                const error = userRegisterValidate(body)
+                if (error) {
+                    cb({
+                        name: 'validation_error',
+                        message: JSON.stringify(error)
+                    }, '')
+                } else {
+                    console.log(2)
+                    cb(null, process.cwd() + '/src/storage/files')
+                }
             }
 
-            cb(null, process.cwd() + '/src/storage/files')
         },
         filename: (req, file, cb) => {
             cb(null, new Date().toISOString().replace(/:/g, '-')
@@ -39,14 +41,22 @@ const fileStorage = multer({
 
 const uploadFileMiddleware = (req: Request, res: Response, next: NextFunction) => {
     fileStorage(req, res, function (errors) {
+        const body: UserRegisterWithoutFile = req.body
+        const error = userRegisterValidate(body)
+        if (error) {
+            return res.status(400).json(error);
+        }
         const sizeLimit: ErrorCode = 'LIMIT_FILE_SIZE';
-        if(!errors) return next();
+        if (!errors) return next();
 
-        if (errors.code === sizeLimit) {
-            console.log(errors.message)
-            res.status(400).json({errors:[errors.message]});
-        } else {
-            res.status(400).json({errors});
+        if(errors){
+            if (errors.code === sizeLimit) {
+                res.status(400).json({errors: [errors.message]});
+            } else {
+                res.status(400).json(errors);
+            }
+        }else {
+            next()
         }
     })
 }

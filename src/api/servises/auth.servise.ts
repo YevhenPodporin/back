@@ -1,22 +1,24 @@
-import {UserRegisterRequestBody} from "../../models/UserModel";
+import {UserRegisterRequestBody} from "../../types/UserTypes";
 
 const createError = require('http-errors')
 
 import {PrismaClient, Prisma} from "@prisma/client";
 import {Request} from "express";
+import {signAccessToken} from "../../utils/jwt";
+import {compareSync, hashSync} from "bcrypt";
 
 
 const prisma = new PrismaClient({errorFormat: "pretty"});
-const bcrypt = require('bcrypt')
-const jwt = require('../../utils/jwt.ts');
+
+
 require('dotenv').config();
 
 class authService {
-    static async register(data: UserRegisterRequestBody) {
+    public async register(data: UserRegisterRequestBody) {
         const {email, first_name, last_name, date_of_birth, file} = data;
-        const password = bcrypt.hashSync(data.password, 8);
+        const password = hashSync(data.password, 8);
         try {
-            await prisma.users.create({
+           const user = await prisma.users.create({
                 data: {
                     email,
                     password,
@@ -25,18 +27,17 @@ class authService {
                             first_name,
                             date_of_birth,
                             last_name,
-                            // file_path: file?.path.replace('storage\\',''),
-                            file_path: file?.filename,
+                            file_path:file? file.filename:null,
                             is_online: true
                         }
                     }
                 },
-            });
-            const token = await jwt.signAccessToken(data);
-            return {token, error: null};
+            })
+            const token = await signAccessToken(user);
+            // await prisma.users.delete({where:{email}})
+            return {token};
         } catch (e) {
             if (e instanceof Prisma.PrismaClientKnownRequestError) {
-                console.log({e})
                 return {error: `User with email ${email} already registered`}
             } else {
                 return {error: 'Something wrong'}
@@ -44,9 +45,8 @@ class authService {
         }
     }
 
-    static async login(req: Request) {
+    public async login(req: Request) {
         const {email, password} = req.body;
-
         const user = await prisma.users.findFirst({
             where: {email},
         });
@@ -54,16 +54,15 @@ class authService {
             return {error: `User not found`}
         }
         try {
-            const checkPassword = bcrypt.compareSync(password, user.password)
+            const checkPassword = compareSync(password, user.password)
 
             if (!checkPassword) throw createError.Unauthorized('Email address or password not valid')
-            const accessToken = jwt.signAccessToken(req.body);
-            return {status: 'OK', accessToken, error: null}
+            const accessToken = await signAccessToken({email,id:user.id});
+            return {accessToken}
         } catch (error) {
-
-            return {error: error ? error : `Access token expired`}
+            return {error:  error || `Access token expired`}
         }
     }
 }
 
-export default authService;
+export default new authService();

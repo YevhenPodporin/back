@@ -9,51 +9,65 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model users {
-  id       Int      @id @default(autoincrement())
-  email    String   @unique
-  password String
-  profile  profile?
+model Users {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique
+  password    String
+  profile     Profile?
+  fromFriends Friends[] @relation("fromUser")
+  toFriends   Friends[] @relation("toUser")
+
+  @@map("users")
 }
 
-model profile {
+model Profile {
   id            Int       @id @default(autoincrement())
   first_name    String
   last_name     String?
   date_of_birth String?
   file_path     String?
-  user          users     @relation(fields: [user_id], references: [id])
+  user          Users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   user_id       Int       @unique
   is_online     Boolean   @default(false)
-  messages      messages?
+  messages      Messages?
   updated_at    DateTime  @default(now())
   created_at    DateTime  @default(now())
+
+  @@map("profile")
 }
 
-model chats {
+model Chats {
   id              Int       @id @default(autoincrement())
   chat_name       String
   image           String
   unread_messages Int
   last_message    String
-  messages        messages?
+  messages        Messages?
+
+  @@map("chats")
 }
 
-model messages {
+model Messages {
   id        Int     @id @default(autoincrement())
-  chat      chats   @relation(fields: [chat_id], references: [id])
+  chat      Chats   @relation(fields: [chat_id], references: [id])
   chat_id   Int     @unique
-  user      profile @relation(fields: [sender_id], references: [user_id])
+  user      Profile @relation(fields: [sender_id], references: [user_id])
   sender_id Int     @unique
   message   String
   files     Json
+
+  @@map("messages")
 }
 
-model friends {
-  id           Int            @id @default(autoincrement())
+model Friends {
+  id           Int           @id @default(autoincrement())
   from_user_id Int
   to_user_id   Int
-  status       RequestStatus?
+  status       RequestStatus
+  from_user    Users         @relation("fromUser", fields: [from_user_id], references: [id])
+  to_user      Users         @relation("toUser", fields: [to_user_id], references: [id])
+
+  @@map("friends")
 }
 
 enum RequestStatus {

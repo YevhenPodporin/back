@@ -1,14 +1,12 @@
 import {PrismaClient, Prisma} from "@prisma/client";
-import express from "express";
-import {UserProfile, UserUpdateProfileBody} from "../../models/UserModel";
+import { UserUpdateProfileBody} from "../../types/UserTypes";
 
 const prisma = new PrismaClient();
 require('dotenv').config();
 const fs = require('fs');
 
 class userService {
-    static async getProfile(data: { payload: { email: string }, currentUrl: string }) {
-        const {email} = data.payload;
+    public async getProfile({email,currentUrl}: { email: string , currentUrl: string }) {
         try {
             let userProfile = await prisma.users.findFirst({
                 where: {email},
@@ -17,11 +15,11 @@ class userService {
             const resProfile = {...userProfile?.profile, email}
             const file_path = resProfile.file_path
             // Construct the URL for the file
-            const fileUrl = data.currentUrl + file_path;
+            const fileUrl = currentUrl + file_path;
             if (file_path) {
                 resProfile.file_path = fileUrl
             }
-            return {error: null, ...resProfile}
+            return { ...resProfile}
         } catch (e) {
             if (e instanceof Prisma.PrismaClientKnownRequestError) {
                 return {error: `User with email:${email} not found`}
@@ -29,16 +27,15 @@ class userService {
         }
     }
 
-    static async editProfile(data: { user: UserUpdateProfileBody, file: Express.Multer.File | null }) {
+    public async editProfile({email, file, user}: { user: UserUpdateProfileBody,email:string, file: Express.Multer.File | null }) {
         try{
-            if (data.user.payload) {
-                const email = data.user.payload.email
+            if (email) {
                 let userProfile = await prisma.users.findFirst({
                     where: {
                         email
                     }, include: {profile: true}
                 })
-                if (userProfile && userProfile.profile && data.file && email) {
+                if (userProfile && userProfile.profile && file && email) {
                     if (userProfile.profile.file_path) {
                         fs.unlinkSync(userProfile.profile.file_path)
                     }
@@ -48,11 +45,11 @@ class userService {
                         }, data: {
                             email, profile: {
                                 update: {
-                                    first_name: data.user.first_name,
-                                    last_name: data.user.last_name,
-                                    file_path:data.file.path,
+                                    first_name: user.first_name,
+                                    last_name: user.last_name,
+                                    file_path:file.path,
                                     is_online:true,
-                                    date_of_birth:data.user.date_of_birth,
+                                    date_of_birth:user.date_of_birth,
                                 }
                             }
                         }
@@ -67,4 +64,4 @@ class userService {
     }
 }
 
-export default userService;
+export default new userService();
