@@ -5,15 +5,160 @@ const prisma = new PrismaClient();
 require('dotenv').config();
 
 class networkService {
-    public async getUserList({user, params, currentUrl}: {
+
+    public async getMyFriends({user, params, currentUrl}: {
         user: JwtPayload,
         currentUrl: string,
         params: PaginationParams
     }) {
-
         const {filter, pagination} = params;
         const words = filter?.search && filter?.search.trim().split(' ') || '';
         const status = filter?.status;
+
+        const friendIds = async () => {
+            const friendRequests = await prisma.friends.findMany({
+                where: {
+                    OR: [
+                        {to_user_id: user.id},
+                        {from_user_id: status === 'APPROVED' ? user.id : undefined}
+                    ], AND: {status: RequestStatus.APPROVED}
+                },
+            });
+
+            return friendRequests.map((request) => {
+                if (request.from_user_id === user.id) {
+                    return +request.to_user_id
+                } else {
+                    return +request.from_user_id
+                }
+            });
+        }
+        const query: Prisma.ProfileFindManyArgs = {
+            where: {
+                NOT: {user: {email: user.email}},
+                OR: filter?.search && filter?.search?.length > 0 ? [
+                    {first_name: {contains: words[0]}},
+                    {last_name: {contains: words[0]}},
+                    {first_name: {contains: words[1]}},
+                    {last_name: {contains: words[1]}},
+                ] : undefined,
+            },
+            take: Number(pagination?.take),
+            skip: Number(pagination?.skip),
+            orderBy: {
+                [pagination?.order_by || 'created_at']: pagination?.direction
+            },
+        };
+        // Получить идентификаторы пользователей, отправивших запросы (статус REQUEST)
+        // Фильтрация по статусу и идентификаторам друзей
+        query.where!.user_id = {
+            in: await friendIds(),
+        } as Prisma.IntFilter;
+
+        try {
+            const [list, count] = await prisma.$transaction([
+                prisma.profile.findMany(query),
+                prisma.profile.count({where: query.where})
+            ]);
+            const userList = list.map(user => ({
+                ...user,
+                file_path: user.file_path ? currentUrl + user.file_path : null
+            }))
+            return {list: userList, count};
+        } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError) {
+                return {error: `User with email:${user.email} not found`};
+            }
+        }
+    }
+
+    public async getRequests({user, params, currentUrl}: {
+        user: JwtPayload,
+        currentUrl: string,
+        params: PaginationParams
+    }) {
+        const {filter, pagination} = params;
+        const words = filter?.search && filter?.search.trim().split(' ') || '';
+        const friendIds = async () => {
+            const friendRequests = await prisma.friends.findMany({
+                where: {
+                    OR: [
+                        {to_user_id: user.id},
+                    ], AND: {status: RequestStatus.REQUEST}
+                },
+            });
+
+            return friendRequests.map((request) => {
+                if (request.from_user_id === user.id) {
+                    return +request.to_user_id
+                } else {
+                    return +request.from_user_id
+                }
+            });
+        }
+        const query: Prisma.ProfileFindManyArgs = {
+            where: {
+                NOT: {user: {email: user.email}},
+                OR: filter?.search && filter?.search?.length > 0 ? [
+                    {first_name: {contains: words[0]}},
+                    {last_name: {contains: words[0]}},
+                    {first_name: {contains: words[1]}},
+                    {last_name: {contains: words[1]}},
+                ] : undefined,
+            },
+            take: Number(pagination?.take),
+            skip: Number(pagination?.skip),
+            orderBy: {
+                [pagination?.order_by || 'created_at']: pagination?.direction
+            },
+        };
+
+        query.where!.user_id = {
+            in: await friendIds(),
+        } as Prisma.IntFilter;
+
+        try {
+            const [list, count] = await prisma.$transaction([
+                prisma.profile.findMany(query),
+                prisma.profile.count({where: query.where})
+            ]);
+            const userList = list.map(user => ({
+                ...user,
+                file_path: user.file_path ? currentUrl + user.file_path : null
+            }))
+            return {list: userList, count};
+        } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError) {
+                return {error: `User with email:${user.email} not found`};
+            }
+        }
+    }
+
+    public async getAllUsers({user, params, currentUrl}: {
+        user: JwtPayload,
+        currentUrl: string,
+        params: PaginationParams
+    }) {
+        const {filter, pagination} = params;
+        const words = filter?.search && filter?.search.trim().split(' ') || '';
+
+        const friendIds = async () => {
+            const friendRequests = await prisma.friends.findMany({
+                where: {
+                    OR: [
+                        {to_user_id: user.id},
+                    ], AND:{OR: [{status: 'APPROVED'}, {status: 'REQUEST'}]}
+                },
+            });
+
+            return friendRequests.map((request) => {
+                if (request.from_user_id === user.id) {
+                    return +request.to_user_id
+                } else {
+                    return +request.from_user_id
+                }
+            });
+        }
         const query: Prisma.ProfileFindManyArgs = {
             where: {
                 NOT: {user: {email: user.email}},
@@ -33,26 +178,13 @@ class networkService {
 
         if (status) {
             // Получить идентификаторы пользователей, отправивших запросы (статус REQUEST)
-            const friendRequests = await prisma.friends.findMany({
-                where: {
-                    OR: [
-                        {to_user_id: user.id},
-                        {from_user_id: user.id}
-                    ], AND: {status}
-                },
-            });
-
-            const friendIds = friendRequests.map((request) => {
-                if(request.from_user_id === user.id){
-                    return request.to_user_id
-                }else{
-                   return  request.from_user_id
-                }
-            });
-
             // Фильтрация по статусу и идентификаторам друзей
             query.where!.user_id = {
-                in: friendIds,
+                in: await friendIds(),
+            } as Prisma.IntFilter;
+        } else {
+            query.where!.user_id = {
+                not: {in: await friendIds()},
             } as Prisma.IntFilter;
         }
 
@@ -61,7 +193,11 @@ class networkService {
                 prisma.profile.findMany(query),
                 prisma.profile.count({where: query.where})
             ]);
-            return {list, count};
+            const userList = list.map(user => ({
+                ...user,
+                file_path: user.file_path ? currentUrl + user.file_path : null
+            }))
+            return {list: userList, count};
         } catch (e) {
             if (e instanceof Prisma.PrismaClientKnownRequestError) {
                 return {error: `User with email:${user.email} not found`};
