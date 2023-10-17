@@ -1,24 +1,23 @@
-import multer, {ErrorCode} from 'multer';
+import multer from 'multer';
 import {NextFunction, Request, Response} from 'express';
-import {userRegisterValidate} from '../validation/userValidation';
+import {userEditProfileValidate, userRegisterValidate} from '../validation/userValidation';
 import {UserRegisterWithoutFile} from '../types/UserTypes';
 import {MAX_FILE_SIZE} from "../constants/constants";
 
-const types = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+const fileTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 
 const fileStorage = multer({
     storage: multer.diskStorage({
         destination: (req, file, cb) => {
             if (file) {
                 const body: UserRegisterWithoutFile = req.body
-                const error = userRegisterValidate(body)
+                const error = req.path.includes('edit') ? userEditProfileValidate(body) : userRegisterValidate(body)
                 if (error) {
                     cb({
                         name: 'validation_error',
                         message: JSON.stringify(error)
                     }, '')
                 } else {
-                    console.log(2)
                     cb(null, process.cwd() + '/src/storage/files')
                 }
             }
@@ -31,10 +30,10 @@ const fileStorage = multer({
     }),
     limits: {fileSize: MAX_FILE_SIZE},
     fileFilter: (req, file, cb) => {
-        if (types.includes(file.mimetype)) {
+        if (fileTypes.includes(file.mimetype)) {
             cb(null, true)
         } else {
-            cb(null, false)
+            cb({name:'Filetype error', message:'Valid types'+JSON.stringify(fileTypes.toString())})
         }
     },
 }).single('file')
@@ -42,24 +41,16 @@ const fileStorage = multer({
 const uploadFileMiddleware = (req: Request, res: Response, next: NextFunction) => {
     fileStorage(req, res, function (errors) {
         const body: UserRegisterWithoutFile = req.body
-        const error = userRegisterValidate(body)
+        const error = req.path.includes('edit') ? userEditProfileValidate(body) : userRegisterValidate(body)
         if (error) {
             return res.status(400).json(error);
         }
-        const sizeLimit: ErrorCode = 'LIMIT_FILE_SIZE';
-        if (!errors) return next();
-
-        if(errors){
-            if (errors.code === sizeLimit) {
-                res.status(400).json({errors: [errors.message]});
-            } else {
-                res.status(400).json(errors);
-            }
-        }else {
+        if (errors) {
+              return   res.status(400).json({errors: [errors.message]});
+        } else {
             next()
         }
     })
 }
-
 
 export default uploadFileMiddleware

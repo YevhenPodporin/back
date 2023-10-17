@@ -30,7 +30,7 @@ class networkController {
         }
         return res.status(200)
     }
-    public addToFriend = async (req: Request, res: Response) => {
+    public userRequest = async (req: Request, res: Response) => {
         const data = {
             from_user_id: res.locals.user.id.toString(),
             to_user_id: req.body.to_user_id.toString(),

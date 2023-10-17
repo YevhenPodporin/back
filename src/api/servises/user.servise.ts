@@ -1,76 +1,85 @@
 import {PrismaClient, Prisma} from "@prisma/client";
-import {UserUpdateProfileBody} from "../../types/UserTypes";
+import {JwtPayload, UserUpdateProfileBody} from "../../types/UserTypes";
+import unlinkFIleByName from "../../helpers/unlinkFIleByName";
+import {getImageUrl} from "../../helpers/getImageUrl";
 
 const prisma = new PrismaClient();
 require('dotenv').config();
-const fs = require('fs');
 
 class userService {
     public async setStatusIsOnline({user_id, is_online}: { user_id: number, is_online: boolean }) {
-         await prisma.profile.update({
-            where:{user_id}, data:{is_online}
+        await prisma.profile.update({
+            where: {user_id}, data: {is_online}
         })
     }
 
-    public async getProfile({email, currentUrl}: { email: string, currentUrl: string }) {
+    public async getProfile( id: number ) {
         try {
             let userProfile = await prisma.users.findFirst({
-                where: {email},
+                where: {id},
                 select: {email: true, profile: true}
             });
-            const resProfile = {...userProfile?.profile, email}
-            const file_path = resProfile.file_path
-            // Construct the URL for the file
-            const fileUrl = currentUrl + file_path;
-            if (file_path) {
-                resProfile.file_path = fileUrl
+            if (userProfile) {
+                const resProfile = {...userProfile?.profile, email: userProfile.email}
+                const file_path = resProfile.file_path
+                // Construct the URL for the file
+                if (file_path) {
+                    resProfile.file_path = getImageUrl(file_path)
+                }
+                return {...resProfile}
             }
-            return {...resProfile}
         } catch (e) {
             if (e instanceof Prisma.PrismaClientKnownRequestError) {
-                return {error: `User with email:${email} not found`}
+                return {error: `User with email:${id} not found`}
             }
         }
     }
 
-    public async editProfile({email, file, user}: {
-        user: UserUpdateProfileBody,
-        email: string,
-        file: Express.Multer.File | null
+    public async editProfile({body, user}: {
+        body: UserUpdateProfileBody,
+        user: JwtPayload
     }) {
+        const {email, id} = user
         try {
             if (email) {
                 let userProfile = await prisma.users.findFirst({
                     where: {
-                        email
+                        id,
                     }, include: {profile: true}
                 })
-                if (userProfile && userProfile.profile && file && email) {
-                    if (userProfile.profile.file_path) {
-                        fs.unlinkSync(userProfile.profile.file_path)
+                if (userProfile && userProfile.profile) {
+                    if (userProfile.profile.file_path && body.file) {
+                        await unlinkFIleByName(userProfile.profile.file_path)
                     }
-                    await prisma.users.update({
+                    const updatedProfile = await prisma.users.update({
                         where: {
-                            email
+                            id,
                         }, data: {
-                            email, profile: {
+                            email: body.email,
+                            profile: {
                                 update: {
-                                    first_name: user.first_name,
-                                    last_name: user.last_name,
-                                    file_path: file.path,
+                                    first_name: body.first_name,
+                                    last_name: body.last_name,
+                                    file_path: body.file ? body.file.filename : undefined,
                                     is_online: true,
-                                    date_of_birth: user.date_of_birth,
+                                    date_of_birth: body.date_of_birth,
                                 }
                             }
-                        }
+                        }, select: {email: true, profile:true}
                     })
+                    if(updatedProfile.profile){
+                        const file_path = updatedProfile.profile.file_path
+                        if (file_path) {
+                            updatedProfile.profile.file_path = getImageUrl(file_path)
+                        }
+                        return {...updatedProfile?.profile, email: updatedProfile.email}
+                    }
                 }
-                return {error: null, userProfile};
+
             }
         } catch (e) {
             return {error: e}
         }
-
     }
 }
 

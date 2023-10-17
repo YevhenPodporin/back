@@ -6,7 +6,7 @@ dotenv.config();
 
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET || "";
 
-export function signAccessToken(payload:JwtPayload) {
+export function signAccessToken(payload: JwtPayload) {
     return new Promise((resolve, reject) => {
         jwt.sign(
             payload,
@@ -24,14 +24,15 @@ export function signAccessToken(payload:JwtPayload) {
     })
 }
 
-export function verifyAccessToken(token: string) {
+export function verifyAccessToken(token: string): Promise<JwtPayload> {
     return new Promise((resolve, reject) => {
         jwt.verify(token, accessTokenSecret, (err, payload) => {
             if (err) {
-                const message = err.name == 'JsonWebTokenError' ? 'Unauthorized' : err.message
-                reject(message)
+                const message = err.name == 'JsonWebTokenError' ? 'Unauthorized' : err.message;
+                reject(message);
             }
-            resolve(payload)
+
+            resolve(payload as JwtPayload);
         })
     })
 }

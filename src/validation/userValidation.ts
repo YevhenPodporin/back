@@ -4,13 +4,16 @@ import {
     EMAIL_VALIDATE_MESSAGE, NUMBER_PATTERN
 } from '../constants/constants';
 import {
-    Direction, OrderBy,
+    Direction,
+    OrderBy,
     PaginationParams,
     RequestToFriend,
     UserLoginRequestBody,
-    UserRegisterWithoutFile
+    UserRegisterWithoutFile,
+    UserUpdateProfileBodyWithoutFile
 } from '../types/UserTypes';
 import {RequestStatus} from "@prisma/client";
+import {CreateChatType} from "../types/ChatTypes";
 
 const validStatus = Object.values(RequestStatus)
 
@@ -34,6 +37,18 @@ export const userRegisterValidate = (data: UserRegisterWithoutFile) => {
             date_of_birth: Joi.string().trim().trim().required(),
             last_name: Joi.string().trim().required(),
             first_name: Joi.string().trim().required(),
+        })
+            .validate(data, {abortEarly: false, convert: false})
+    return formatError(res);
+};
+
+export const userEditProfileValidate = (data: UserUpdateProfileBodyWithoutFile) => {
+    const res =
+        Joi.object<null, true, UserUpdateProfileBodyWithoutFile>({
+            email: Joi.string().regex(EMAIL_REGEXP).message(EMAIL_VALIDATE_MESSAGE),
+            date_of_birth: Joi.string().trim().trim(),
+            last_name: Joi.string().trim(),
+            first_name: Joi.string().trim(),
         })
             .validate(data, {abortEarly: false, convert: false})
     return formatError(res);
@@ -76,4 +91,15 @@ export const requestToFriendValidate = (data: RequestToFriend) => {
             .validate(data, {abortEarly: false, convert:true})
     return formatError(res);
 }
+
+export const createChatValidate = (data: CreateChatType) => {
+    const res =
+        Joi.object<null, true, CreateChatType>({
+            from_user_id: Joi.number().required(),
+            to_user_id:  Joi.number().required(),
+        })
+            .validate(data, {abortEarly: false, convert:true})
+    return formatError(res);
+}
+
 

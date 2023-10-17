@@ -32,7 +32,7 @@ class authController {
                     error
                 })
             } else {
-                res.status(200).json({
+             return res.status(200).json({
                     message: "Account login successful",
                     accessToken
                 })

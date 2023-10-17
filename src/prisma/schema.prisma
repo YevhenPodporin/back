@@ -10,51 +10,59 @@ datasource db {
 }
 
 model Users {
-  id          Int       @id @default(autoincrement())
-  email       String    @unique
-  password    String
-  profile     Profile?
-  fromFriends Friends[] @relation("fromUser")
-  toFriends   Friends[] @relation("toUser")
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  password     String
+  profile      Profile?
+  fromFriends  Friends[] @relation("fromUser")
+  toFriends    Friends[] @relation("toUser")
+  chatFromUser Chats[]   @relation("chatFromUser")
+  chatToUser   Chats[]   @relation("chatToUser")
 
   @@map("users")
 }
 
 model Profile {
-  id            Int       @id @default(autoincrement())
+  id            Int        @id @default(autoincrement())
   first_name    String
   last_name     String?
   date_of_birth String?
   file_path     String?
-  user          Users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  user_id       Int       @unique
-  is_online     Boolean   @default(false)
-  messages      Messages?
-  updated_at    DateTime  @default(now())
-  created_at    DateTime  @default(now())
+  user          Users      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id       Int        @unique
+  is_online     Boolean    @default(false)
+  messages      Messages[]
+  updated_at    DateTime   @default(now())
+  created_at    DateTime   @default(now())
 
   @@map("profile")
 }
 
 model Chats {
-  id              Int       @id @default(autoincrement())
-  chat_name       String
-  image           String
-  unread_messages Int
-  last_message    String
-  messages        Messages?
+  id              Int        @id @default(autoincrement())
+  from_user_id    Int
+  to_user_id      Int
+  unread_messages Int?
+  last_message    String?
+  messages        Messages[]
+  from_user       Users      @relation("chatFromUser", fields: [from_user_id], references: [id], onDelete: Cascade)
+  to_user         Users      @relation("chatToUser", fields: [to_user_id], references: [id], onDelete: Cascade)
+  updated_at      DateTime   @default(now())
+  created_at      DateTime   @default(now())
 
   @@map("chats")
 }
 
 model Messages {
-  id        Int     @id @default(autoincrement())
-  chat      Chats   @relation(fields: [chat_id], references: [id])
-  chat_id   Int     @unique
-  user      Profile @relation(fields: [sender_id], references: [user_id])
-  sender_id Int     @unique
-  message   String
-  files     Json
+  id         Int      @id @default(autoincrement())
+  chat       Chats    @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  chat_id    Int
+  user       Profile  @relation(fields: [sender_id], references: [user_id], onDelete: Cascade)
+  sender_id  Int
+  message    String
+  file       String?
+  updated_at DateTime @default(now())
+  created_at DateTime @default(now())
 
   @@map("messages")
 }
@@ -64,8 +72,8 @@ model Friends {
   from_user_id Int
   to_user_id   Int
   status       RequestStatus
-  from_user    Users         @relation("fromUser", fields: [from_user_id], references: [id])
-  to_user      Users         @relation("toUser", fields: [to_user_id], references: [id])
+  from_user    Users         @relation("fromUser", fields: [from_user_id], references: [id], onDelete: Cascade)
+  to_user      Users         @relation("toUser", fields: [to_user_id], references: [id], onDelete: Cascade)
 
   @@map("friends")
 }

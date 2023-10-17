@@ -1,12 +1,13 @@
 import {PrismaClient, Prisma, RequestStatus} from "@prisma/client";
 import {JwtPayload, PaginationParams, RequestToFriend} from "../../types/UserTypes";
+import {getImageUrl} from "../../helpers/getImageUrl";
 
 const prisma = new PrismaClient();
 require('dotenv').config();
 
 class networkService {
 
-    public async getMyFriends({user, params, currentUrl}: {
+    public async getMyFriends({user, params}: {
         user: JwtPayload,
         currentUrl: string,
         params: PaginationParams
@@ -35,7 +36,7 @@ class networkService {
         }
         const query: Prisma.ProfileFindManyArgs = {
             where: {
-                NOT: {user: {email: user.email}},
+                NOT: {user: {id:user.id}},
                 OR: filter?.search && filter?.search?.length > 0 ? [
                     {first_name: {contains: words[0]}},
                     {last_name: {contains: words[0]}},
@@ -62,7 +63,7 @@ class networkService {
             ]);
             const userList = list.map(user => ({
                 ...user,
-                file_path: user.file_path ? currentUrl + user.file_path : null
+                file_path: getImageUrl(user?.file_path)
             }))
             return {list: userList, count};
         } catch (e) {
@@ -70,6 +71,7 @@ class networkService {
                 return {error: `User with email:${user.email} not found`};
             }
         }
+
     }
 
     public async getRequests({user, params, currentUrl}: {
@@ -98,7 +100,7 @@ class networkService {
         }
         const query: Prisma.ProfileFindManyArgs = {
             where: {
-                NOT: {user: {email: user.email}},
+                NOT: {user: {id: user.id}},
                 OR: filter?.search && filter?.search?.length > 0 ? [
                     {first_name: {contains: words[0]}},
                     {last_name: {contains: words[0]}},
@@ -141,13 +143,15 @@ class networkService {
     }) {
         const {filter, pagination} = params;
         const words = filter?.search && filter?.search.trim().split(' ') || '';
+        const status = filter?.status;
 
         const friendIds = async () => {
             const friendRequests = await prisma.friends.findMany({
                 where: {
                     OR: [
                         {to_user_id: user.id},
-                    ], AND:{OR: [{status: 'APPROVED'}, {status: 'REQUEST'}]}
+                        {from_user_id: user.id }
+                    ], AND: {OR: [{status:  RequestStatus.APPROVED}, {status: RequestStatus.REQUEST}]}
                 },
             });
 
@@ -161,7 +165,7 @@ class networkService {
         }
         const query: Prisma.ProfileFindManyArgs = {
             where: {
-                NOT: {user: {email: user.email}},
+                NOT: {user: {id: user.id}},
                 OR: filter?.search && filter?.search?.length > 0 ? [
                     {first_name: {contains: words[0]}},
                     {last_name: {contains: words[0]}},
@@ -230,7 +234,7 @@ class networkService {
                     await prisma.friends.delete({
                         where: {id: isHasRequest.id},
                     })
-                    return {errors: null, message: 'User removed from your friends successful'}
+                    return {errors: null, message: isHasRequest.status === RequestStatus.REQUEST?'Request was dismissed successful': 'User removed from your friends successful'}
                 } else if (status === RequestStatus.APPROVED && isHasRequest.from_user_id === +to_user_id) {
                     await prisma.friends.update({
                         where: {id: isHasRequest.id},

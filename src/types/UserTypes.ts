@@ -16,6 +16,7 @@ export interface UserRegisterRequestBody {
 export interface UserRegisterWithoutFile extends Omit<UserRegisterRequestBody, 'file' | 'accessToken'> {}
 
 export interface UserUpdateProfileBody extends  Omit<UserRegisterRequestBody, 'password'>{}
+export interface UserUpdateProfileBodyWithoutFile extends  Omit<UserRegisterRequestBody, 'password'|'file'>{}
 
 export type UserLoginRequestBody  = Pick<UserRegisterRequestBody, 'email'|'password'>
 

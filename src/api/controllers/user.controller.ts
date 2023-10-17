@@ -3,31 +3,28 @@ import userService from "../servises/user.servise";
 
 class userController {
     public getProfile = async (req: Request, res: Response, next:NextFunction) => {
-        const currentUrl = `${req.protocol}://${req.get('host')}/image/`
-        const data = await userService.getProfile({email: res.locals.user.email, currentUrl});
+        const data = await userService.getProfile(res.locals.user.id);
         if (data?.error) {
             res.status(404).json({
                 error: data.error,
             })
         } else {
-            res.status(200).json({
-                ...data
-            })
+            res.status(200).json(data)
         }
-        next()
+      return next()
     }
 
     public editProfile = async (req: Request, res: Response) => {
-        const user = {user: {...req.body}, email: res.locals.user.email, file: req.file || null}
-        const data = await userService.editProfile(user)
+        const body = req.body
+        body.file = req.file
+        const user = res.locals.user
+            const data = await userService.editProfile({body,user})
         if (data?.error) {
             res.status(404).json({
                 error: data.error,
             })
         } else {
-            res.status(200).json({
-                ...data
-            })
+            res.status(200).json(data)
         }
     }
 }
