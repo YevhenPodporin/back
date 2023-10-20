@@ -12,10 +12,10 @@ const socketMiddleware = (socket: SocketWithUser, next: (err?: ExtendedError) =>
         if(user.id){
             await userService.setStatusIsOnline({user_id: user.id, is_online: true})
             socket.user = user;
-            return next();
+            next();
         }
     }).catch(() => {
-        socket.disconnect();
+       socket.disconnect();
     })
 };
 

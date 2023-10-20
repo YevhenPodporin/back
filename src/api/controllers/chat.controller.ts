@@ -41,6 +41,7 @@ class chatController {
     }
 
     public async getMessages(req: Request & {query:GetMessages}, res: Response) {
+
         const params: GetMessages = {...req.query, user:res.locals.user}
         const data = await chatService.getMessagesInChat(params)
         return res.status(200).json(data)

@@ -1,6 +1,7 @@
 import {PrismaClient, RequestStatus} from "@prisma/client";
 import {CreateChatType, CreateMessageType, GetMessages, GetRoom} from "../../types/ChatTypes";
 import {getImageUrl} from "../../helpers/getImageUrl";
+import {Notifications} from ".prisma/client";
 
 const prisma = new PrismaClient();
 require('dotenv').config();
@@ -52,7 +53,7 @@ class chatService {
     }
 
     public async getChatList(user_id: number) {
-        return   prisma.chats.findMany({
+        return prisma.chats.findMany({
             where: {
                 OR: [
                     {from_user: {id: +user_id}},
@@ -61,16 +62,26 @@ class chatService {
             },
             include: {
                 to_user: {select: {profile: true}},
-                from_user: {select: {profile: true}}
+                from_user: {select: {profile: true}},
+                messages: {
+                    orderBy: {created_at: 'desc'},
+                    take: 1, select: {message: true},
+                },
+                notifications: {
+                    where: {to_user_id: user_id},
+                    select: {to_user_id: true, unread_messages: true}
+                }
             }
         })
-
     }
 
-    public async getRoom({id, from_user_id, to_user_id}: GetRoom) {
+    public async getRoom({id, from_user_id}: GetRoom) {
         return prisma.chats.findFirst({
             where: {
-                OR: this.queryOr({to_user_id, from_user_id}),
+                OR: [
+                    {from_user: {id: +from_user_id}},
+                    {to_user: {id: +from_user_id}}
+                ],
                 AND: {id: Number(id)}
             }
         })
@@ -89,8 +100,8 @@ class chatService {
             where: {
                 id: Number(chat_id),
                 OR: [
-                    {from_user_id: +user.id,},
-                    {to_user_id: +user.id},
+                    {from_user_id: Number(user.id),},
+                    {to_user_id: Number(user.id)},
                 ],
             },
             select: {
@@ -104,14 +115,46 @@ class chatService {
                 _count: true,
             },
         })
-        if (!messages) return {}
+        if (!messages) return {list: [], count: 0}
         const messagesToSend = messages.messages.map(message => {
             return {
                 ...message,
                 file: getImageUrl(message.file),
             }
         })
-        return {list:messagesToSend, count:messages._count.messages}
+        return {list: messagesToSend, count: messages._count.messages}
+    }
+
+    public async addNotification(data: Omit<Notifications, 'unread_messages' | 'id'>) {
+        return prisma.notifications.upsert({
+            where: {
+                to_chat_id_to_user_id: {
+                    to_user_id: data.to_user_id,
+                    to_chat_id: data.to_chat_id
+                }
+            }
+            , create: {
+                ...data,
+                unread_messages: 1
+            },
+            update: {
+                unread_messages: {increment: 1}
+            }
+        })
+    }
+
+    public async removeNotification(data: Omit<Notifications, 'unread_messages' | 'id'>) {
+        console.log(data)
+        await prisma.notifications.delete({
+            where: {
+                to_chat_id_to_user_id: {
+                    to_user_id: data.to_user_id,
+                    to_chat_id: data.to_chat_id
+                }
+            }
+        }).catch((e) => {
+            console.log('Nothing to delete')
+        })
     }
 }
 

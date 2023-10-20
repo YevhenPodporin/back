@@ -1,4 +1,4 @@
-import {RequestStatus, Prisma} from "@prisma/client"
+import {RequestStatus, Prisma, Users} from "@prisma/client"
 
 // TODO Поменять типы для интерфейсов взяв их из моделей Prisma
 //  JWT payload поменять на нормальные поля из type JwtPayload
@@ -48,4 +48,4 @@ export interface RequestToFriend {
     status: RequestStatus
 }
 
-export type JwtPayload = Pick<Prisma.UsersUncheckedCreateInput, 'email' | 'id'>
+export type JwtPayload = Pick<Users, 'email' | 'id'>

@@ -1,14 +1,16 @@
 import {Prisma} from "@prisma/client";
 import {Socket} from "socket.io";
 import {Direction, JwtPayload, OrderBy} from "./UserTypes";
+import {Notifications} from ".prisma/client";
 
 export type CreateChatType = {
     from_user_id: Prisma.ChatsUncheckedCreateInput['from_user_id'],
     to_user_id: Prisma.ChatsUncheckedCreateInput['to_user_id'],
 }
 
-export interface GetRoom extends CreateChatType{
+export interface GetRoom {
     id:Prisma.ChatsUncheckedCreateInput['id']
+    from_user_id: Prisma.ChatsUncheckedCreateInput['from_user_id'],
 }
 export interface SocketWithUser extends Socket {
     user: JwtPayload
@@ -43,3 +45,5 @@ export type GetMessages = {
     }
     user:JwtPayload
 }
+export interface Chat extends Prisma.ChatsUncheckedCreateInput{}
+
