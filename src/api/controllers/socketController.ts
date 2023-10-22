@@ -5,7 +5,6 @@ import {io} from "../../app";
 import * as fs from "fs";
 import isValidFileType from "../../helpers/isValidFileType";
 import {getImageUrl} from "../../helpers/getImageUrl";
-import {log} from "util";
 
 const saveFileForMessage = (file: sendMessageType['file']) => {
     if (!file) return null;
@@ -21,7 +20,21 @@ const saveFileForMessage = (file: sendMessageType['file']) => {
 
     return newFileName
 }
+const getRecipient = async (socket:SocketWithUser, room:Chat)=>{
+    const sockets = await io.sockets.sockets;
+    const socketsToFind = [...sockets.values()] as SocketWithUser[];
 
+    socketsToFind.forEach((value) => {
+        // console.log(value.user.email, value.rooms)
+    })
+
+    const toUserId = socket.user.id === room?.to_user_id
+        ? room?.from_user_id
+        : room?.to_user_id
+
+    const socketToSend =  socketsToFind.find(data => data.user.id === toUserId);
+    return {socketToSend, toUserId}
+}
 const socketController = async (socket: SocketWithUser) => {
     let room: Chat;
 
@@ -50,6 +63,7 @@ const socketController = async (socket: SocketWithUser) => {
     })
 
     socket.on("send-message", async ({file, message, chat_id}: sendMessageType, cb: (status: string) => string) => {
+        if(!message || !file)return;
         if ((!socket.rooms.has(String(chat_id)) || !socket.user) && cb) {
             return cb('error')
         }
@@ -62,25 +76,18 @@ const socketController = async (socket: SocketWithUser) => {
         })
         savedMessage.file = getImageUrl(savedMessage.file);
 
-        const sockets = await io.sockets.sockets;
-        const socketsToFind = [...sockets.values()] as SocketWithUser[];
-        socketsToFind.forEach((value) => {
-            // console.log(value.user.email, value.rooms)
-        })
+        const {toUserId,socketToSend} = await getRecipient(socket,room)
 
-        const toUserId = socket.user.id === room?.to_user_id
-            ? room?.from_user_id
-            : room?.to_user_id
-
-        const socketToSend = socketsToFind.find(data => data.user.id === toUserId)
-
-        if (socketToSend && !socketToSend.rooms.has(String(chat_id))) {
-            const newNotification = await chatService.addNotification({
+        if(!socketToSend || !socketToSend.rooms.has(String(chat_id)) && toUserId){
+           const notification = await chatService.addNotification({
                 to_user_id:toUserId,
                 to_chat_id:Number(chat_id),
             })
+            io.to(String(socketToSend?.id)).emit("notification", {...notification,message})
+        }
 
-            io.to(String(socketToSend?.id)).emit("notification", `You have new message from ${socket.user.email}`)
+        if (socketToSend && !socketToSend.rooms.has(String(chat_id))) {
+
             io.to(String(chat_id)).emit("receive-message", savedMessage)
         } else {
             io.to(String(chat_id)).emit("receive-message", savedMessage)
@@ -89,18 +96,7 @@ const socketController = async (socket: SocketWithUser) => {
     });
 
     socket.on('typing', async ({first_name, chat_id}: UserTyping) => {
-        const sockets = await io.sockets.sockets;
-        const socketsToFind = [...sockets.values()] as SocketWithUser[];
-
-        socketsToFind.forEach((value) => {
-            // console.log(value.user.email, value.rooms)
-        })
-
-        const toUserId = socket.user.id === room?.to_user_id
-            ? room?.from_user_id
-            : room?.to_user_id
-
-        const socketToSend = socketsToFind.find(data => data.user.id === toUserId);
+        const {socketToSend} = await getRecipient(socket, room)
         if(socketToSend && socketToSend.rooms.has(String(chat_id))){
             socket.to(chat_id).emit('someoneTyping', {first_name, id: socket.user.id})
         }else{

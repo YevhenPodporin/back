@@ -14,6 +14,8 @@ import chatController from "../controllers/chat.controller";
 
 router.use(/^\/(?!register|login).*$/, auth);
 
+
+
 /*Authorization roots*/
 router.post('/register', uploadFileMiddleware, authController.register);
 router.post('/login', authController.login);

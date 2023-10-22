@@ -1,4 +1,4 @@
-import {Prisma} from "@prisma/client";
+import {Chats, Prisma, Profile} from "@prisma/client";
 import {Socket} from "socket.io";
 import {Direction, JwtPayload, OrderBy} from "./UserTypes";
 import {Notifications} from ".prisma/client";
@@ -47,3 +47,9 @@ export type GetMessages = {
 }
 export interface Chat extends Prisma.ChatsUncheckedCreateInput{}
 
+export interface ChatListResponse extends Chats{
+    to_user: { profile:Profile },
+    from_user: {profile: Profile },
+    last_message:string,
+    unread_messages:number
+}

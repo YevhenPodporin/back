@@ -1,5 +1,5 @@
 import {PrismaClient, RequestStatus} from "@prisma/client";
-import {CreateChatType, CreateMessageType, GetMessages, GetRoom} from "../../types/ChatTypes";
+import {ChatListResponse, CreateChatType, CreateMessageType, GetMessages, GetRoom} from "../../types/ChatTypes";
 import {getImageUrl} from "../../helpers/getImageUrl";
 import {Notifications} from ".prisma/client";
 
@@ -53,7 +53,7 @@ class chatService {
     }
 
     public async getChatList(user_id: number) {
-        return prisma.chats.findMany({
+        const list = await prisma.chats.findMany({
             where: {
                 OR: [
                     {from_user: {id: +user_id}},
@@ -73,6 +73,33 @@ class chatService {
                 }
             }
         })
+        console.log(list)
+        const data = list.map(item => {
+            return {
+                id: item.id,
+                from_user: {
+                    profile: {
+                        ...item.from_user.profile,
+                        file_path: getImageUrl(item.from_user.profile?.file_path)
+                    }
+                },
+                to_user: {
+                    profile: {
+                        ...item.to_user.profile,
+                        file_path: getImageUrl(item.to_user.profile?.file_path)
+                    }
+
+                },
+                to_user_id: item.to_user_id,
+                from_user_id: item.from_user_id,
+                unread_messages: item.notifications[0]?.unread_messages,
+                last_message: item.messages[0]?.message,
+                created_at: item.created_at,
+                updated_at: item.updated_at
+            }
+        })
+        console.log(data)
+        return data
     }
 
     public async getRoom({id, from_user_id}: GetRoom) {
