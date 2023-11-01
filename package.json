@@ -5,6 +5,7 @@
   "main": "src/app.ts",
   "scripts": {
     "build": "npx tsc",
+    "start": "node dist/app.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "nodemon --watch",
     "prisma:seed": "npx ts-node src/prisma/seeds/userSeed.ts",
