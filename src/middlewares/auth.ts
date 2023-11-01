@@ -1,6 +1,7 @@
 import {NextFunction, Request, Response} from "express";
 import {verifyAccessToken} from "../utils/jwt";
 import userService from "../api/servises/user.servise";
+import {OAuth2Client} from "google-auth-library";
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
     if (!req.headers.authorization) {
@@ -19,4 +20,7 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
     }).catch(e => {
        return  res.status(401).json(e);
     })
+
 }
+
+

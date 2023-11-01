@@ -1,10 +1,12 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import {JwtPayload} from "../types/UserTypes";
+import {OAuth2Client} from "google-auth-library";
+import UserServise from "../api/servises/user.servise";
 
 dotenv.config();
 
-const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET || "";
+const accessTokenSecret = String(process.env.GOOGLE_CLIENT_SECRET);
 
 export function signAccessToken(payload: JwtPayload) {
     return new Promise((resolve, reject) => {
@@ -26,13 +28,34 @@ export function signAccessToken(payload: JwtPayload) {
 
 export function verifyAccessToken(token: string): Promise<JwtPayload> {
     return new Promise((resolve, reject) => {
-        jwt.verify(token, accessTokenSecret, (err, payload) => {
+        jwt.verify(token, accessTokenSecret, async (err, payload) => {
             if (err) {
-                const message = err.name == 'JsonWebTokenError' ? 'Unauthorized' : err.message;
-                reject(message);
+                const {payload,google_id} = await verifyGoogleToken(token);
+                if(payload?.email && google_id){
+                    const user = await UserServise.findUser({google_id});
+                    if(user){
+                        resolve ({email:payload.email, id:user.id})
+                    }else{
+                        reject('User not found');
+                    }
+                }else{
+                    const message = err.name == 'JsonWebTokenError' ? 'Unauthorized' : err.message;
+                    reject(message);
+                }
             }
 
             resolve(payload as JwtPayload);
         })
     })
+}
+
+export  async function verifyGoogleToken(token:string){
+    const client = new OAuth2Client(String(process.env.GOOGLE_CLIENT_ID));
+    const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: String(process.env.GOOGLE_CLIENT_ID)
+    })
+    const payload = ticket.getPayload();
+    const google_id = ticket.getUserId();
+    return {payload, google_id};
 }

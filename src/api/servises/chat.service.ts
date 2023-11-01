@@ -73,7 +73,6 @@ class chatService {
                 }
             }
         })
-        console.log(list)
         const data = list.map(item => {
             return {
                 id: item.id,
@@ -98,7 +97,6 @@ class chatService {
                 updated_at: item.updated_at
             }
         })
-        console.log(data)
         return data
     }
 
@@ -171,7 +169,6 @@ class chatService {
     }
 
     public async removeNotification(data: Omit<Notifications, 'unread_messages' | 'id'>) {
-        console.log(data)
         await prisma.notifications.delete({
             where: {
                 to_chat_id_to_user_id: {

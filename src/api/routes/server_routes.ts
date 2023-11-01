@@ -10,16 +10,17 @@ import authController from "../controllers/auth.controller";
 import networkController from "../controllers/network.controller";
 import userController from "../controllers/user.controller";
 import chatController from "../controllers/chat.controller";
+import {OAuth2Client} from "google-auth-library";
+import {verifyAccessToken} from "../../utils/jwt";
 
-
-router.use(/^\/(?!register|login).*$/, auth);
-
-
+router.use(/^\/(?!register|login|auth\/google).*$/, auth);
 
 /*Authorization roots*/
 router.post('/register', uploadFileMiddleware, authController.register);
 router.post('/login', authController.login);
 router.post('/sign_out', authController.signOut);
+
+router.post('/auth/google', authController.googleAuth)
 
 /*User profile roots*/
 router.get('/profile', userController.getProfile);

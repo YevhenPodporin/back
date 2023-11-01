@@ -1,22 +1,27 @@
-import {RequestStatus, Prisma, Users} from "@prisma/client"
+import {
+    RequestStatus,
+    Prisma,
+    Users, Profile
+} from "@prisma/client"
 
 // TODO Поменять типы для интерфейсов взяв их из моделей Prisma
 //  JWT payload поменять на нормальные поля из type JwtPayload
 //  разбить типы на файлы
 
 export interface UserRegisterRequestBody {
-    email: Prisma.UsersCreateInput['email'],
-    password: Prisma.UsersCreateInput['password'],
-    first_name: Prisma.ProfileCreateInput['first_name'],
-    last_name:  Prisma.ProfileCreateInput['last_name'],
-    date_of_birth:  Prisma.ProfileCreateInput['date_of_birth'],
+    email: Users['email'],
+    password: Users['password'],
+    first_name: Profile['first_name'],
+    last_name:  Profile['last_name'],
+    date_of_birth:  Profile['date_of_birth'],
     file?: Express.Multer.File,
+    google_id?:Users['google_id']
 }
 
-export interface UserRegisterWithoutFile extends Omit<UserRegisterRequestBody, 'file' | 'accessToken'> {}
+export interface UserRegisterWithoutFile extends Omit<UserRegisterRequestBody, 'file' | 'accessToken' | 'google_id'> {}
 
-export interface UserUpdateProfileBody extends  Omit<UserRegisterRequestBody, 'password'>{}
-export interface UserUpdateProfileBodyWithoutFile extends  Omit<UserRegisterRequestBody, 'password'|'file'>{}
+export interface UserUpdateProfileBody extends  Omit<UserRegisterRequestBody, 'password' | 'google_id'>{}
+export interface UserUpdateProfileBodyWithoutFile extends  Omit<UserRegisterRequestBody, 'password'|'file' | 'google_id'>{}
 
 export type UserLoginRequestBody  = Pick<UserRegisterRequestBody, 'email'|'password'>
 
@@ -48,4 +53,7 @@ export interface RequestToFriend {
     status: RequestStatus
 }
 
-export type JwtPayload = Pick<Users, 'email' | 'id'>
+export type JwtPayload = {
+    email:Users['email'],
+    id:Users['id'],
+}

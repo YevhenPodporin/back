@@ -12,7 +12,8 @@ datasource db {
 model Users {
   id           Int       @id @default(autoincrement())
   email        String    @unique
-  password     String
+  password     String?
+  google_id    String?
   profile      Profile?
   fromFriends  Friends[] @relation("fromUser")
   toFriends    Friends[] @relation("toUser")

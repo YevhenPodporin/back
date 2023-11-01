@@ -10,6 +10,7 @@ const saveFileForMessage = (file: sendMessageType['file']) => {
     if (!file) return null;
     const splitted = file.data.split(';base64,');
     const format = splitted[0].split('/')[1];
+    console.log(format)
     if (!isValidFileType(format)) return null;
     const newFileName = new Date().toISOString().replace(/:/g, '-')
         .replace(/\./g, '-') + '-' + file.fileName?.split('.')[0] + '.' + format
@@ -63,7 +64,8 @@ const socketController = async (socket: SocketWithUser) => {
     })
 
     socket.on("send-message", async ({file, message, chat_id}: sendMessageType, cb: (status: string) => string) => {
-        if(!message || !file)return;
+        if(!message && !file)return;
+
         if ((!socket.rooms.has(String(chat_id)) || !socket.user) && cb) {
             return cb('error')
         }

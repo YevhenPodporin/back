@@ -16,7 +16,7 @@ require('dotenv').config();
 class authService {
     public async register(data: UserRegisterRequestBody) {
         const {email, first_name, last_name, date_of_birth, file} = data;
-        const password = hashSync(data.password, 8);
+        const password = hashSync(String(data.password), 8);
         try {
            const user = await prisma.users.create({
                 data: {
@@ -54,13 +54,39 @@ class authService {
             return {error: `User not found`}
         }
         try {
-            const checkPassword = compareSync(password, user.password)
+            if(user.password){
+                const checkPassword = compareSync(password, user.password)
 
-            if (!checkPassword) throw createError.Unauthorized('Email address or password not valid')
-            const accessToken = await signAccessToken({email,id:user.id});
-            return {accessToken}
+                if (!checkPassword) throw createError.Unauthorized('Email address or password not valid')
+                const accessToken = await signAccessToken({email,id:user.id});
+                return {accessToken}
+            }
         } catch (error) {
             return {error:  error || `Access token expired`}
+        }
+    }
+
+    public async googleLoginOrRegister (data:UserRegisterRequestBody) {
+        const maybeUser = await prisma.users.findFirst({
+            where:{
+                google_id:data.google_id
+            }
+        })
+
+        if(!maybeUser) {
+            await prisma.users.create({
+                data: {
+                    email: data.email,
+                    google_id: data.google_id,
+                    profile: {
+                        create: {
+                            first_name: data.first_name,
+                            last_name: data.last_name,
+                            is_online: true
+                        }
+                    }
+                }
+            })
         }
     }
 }
