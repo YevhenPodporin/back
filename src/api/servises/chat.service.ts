@@ -1,5 +1,5 @@
 import {PrismaClient, RequestStatus} from "@prisma/client";
-import {ChatListResponse, CreateChatType, CreateMessageType, GetMessages, GetRoom} from "../../types/ChatTypes";
+import { CreateChatType, CreateMessageType, GetMessages, GetRoom} from "../../types/ChatTypes";
 import {getImageUrl} from "../../helpers/getImageUrl";
 import {Notifications} from ".prisma/client";
 
@@ -73,7 +73,8 @@ class chatService {
                 }
             }
         })
-        const data = list.map(item => {
+
+       return  list.map(item => {
             return {
                 id: item.id,
                 from_user: {
@@ -97,7 +98,7 @@ class chatService {
                 updated_at: item.updated_at
             }
         })
-        return data
+
     }
 
     public async getRoom({id, from_user_id}: GetRoom) {
@@ -176,7 +177,7 @@ class chatService {
                     to_chat_id: data.to_chat_id
                 }
             }
-        }).catch((e) => {
+        }).catch(() => {
             console.log('Nothing to delete')
         })
     }
