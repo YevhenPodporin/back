@@ -11,7 +11,7 @@ const saveFileForMessage = (file: sendMessageType['file']) => {
     const splitted = file.data.split(';base64,');
     let format = splitted[0].split('/')[1];
     if(format.includes('webm')) {
-        format.split(';')[0]
+       format = format.split(';')[0]
     }
 
     if (!isValidFileType(format)){
