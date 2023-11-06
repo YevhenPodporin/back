@@ -1,14 +1,15 @@
 import {NextFunction, Request, Response} from "express";
 import {verifyAccessToken} from "../utils/jwt";
 import userService from "../api/servises/user.servise";
-import {OAuth2Client} from "google-auth-library";
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
     if (!req.headers.authorization) {
-        return res.status(401).end();
+        console.log(1)
+       return  res.status(401).end();
     }
     const token = req.headers.authorization.split(' ')[1];
     if (!token) {
+        console.log(2)
         return res.status(401);
     }
 
@@ -16,9 +17,9 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
         res.locals.user = user;
         // @ts-ignore
         await userService.setStatusIsOnline({user_id: user.id, is_online: true})
-        return  next();
+        next();
     }).catch(e => {
-       return  res.status(401).json(e);
+        return res.status(401).json(e);
     })
 
 }

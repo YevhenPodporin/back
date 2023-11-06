@@ -13,7 +13,7 @@ export function signAccessToken(payload: JwtPayload) {
         jwt.sign(
             payload,
             accessTokenSecret,
-            {expiresIn: "1d"},
+            {expiresIn: "5s"},
             (err: any, token: any) => {
                 if (err) {
                     reject(err.message)
@@ -50,12 +50,16 @@ export function verifyAccessToken(token: string): Promise<JwtPayload> {
 }
 
 export  async function verifyGoogleToken(token:string){
-    const client = new OAuth2Client(String(process.env.GOOGLE_CLIENT_ID));
-    const ticket = await client.verifyIdToken({
-        idToken: token,
-        audience: String(process.env.GOOGLE_CLIENT_ID)
-    })
-    const payload = ticket.getPayload();
-    const google_id = ticket.getUserId();
-    return {payload, google_id};
+    try{
+        const client = new OAuth2Client(String(process.env.GOOGLE_CLIENT_ID));
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: String(process.env.GOOGLE_CLIENT_ID)
+        })
+        const payload = ticket.getPayload();
+        const google_id = ticket.getUserId();
+        return {payload, google_id};
+    }catch (e){
+        return {payload:null,google_id:null}
+    }
 }
