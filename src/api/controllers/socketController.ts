@@ -12,7 +12,7 @@ const saveFileForMessage = (file: sendMessageType['file']) => {
     let format = splitted[0].split('/')[1];
     if(format.includes('webm')) {
        format = format.split(';')[0]
-    }
+    } 
 
     if (!isValidFileType(format)){
         throw new Error('Incorrect file format');

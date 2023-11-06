@@ -1,23 +1,21 @@
-FROM node:16-alpine
-# update packages
-RUN apk update
+# Используем официальный образ Node.js
+FROM node:16
 
-# create root application folder
+# Устанавливаем рабочую директорию внутри контейнера
 WORKDIR /app
 
-# copy configs to /app folder
+# Копируем зависимости и файлы приложения
 COPY package*.json ./
 COPY tsconfig.json ./
-# copy source code to /app/src folder
-COPY src /app/src
+COPY src ./src
 
-# check files list
-RUN ls -a
-
+# Устанавливаем зависимости
 RUN npm install
 
+# Собираем TypeScript
+RUN npx prisma migrate dev --schema src/prisma/schema.prisma
+RUN npx prisma generate --schema src/prisma/schema.prisma
 RUN npm run build
 
-EXPOSE 4000
-
-CMD [ "node", "./dist/app.js" ]
+# Команда для запуска приложения
+CMD ["npm", "start"]
