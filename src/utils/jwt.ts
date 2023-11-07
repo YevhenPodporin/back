@@ -13,7 +13,7 @@ export function signAccessToken(payload: JwtPayload) {
         jwt.sign(
             payload,
             accessTokenSecret,
-            {expiresIn: "5s"},
+            {expiresIn: "1d"},
             (err: any, token: any) => {
                 if (err) {
                     reject(err.message)
