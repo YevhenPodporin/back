@@ -49,7 +49,7 @@ app.use('/image', (req, res) => {
 })
 
 app.get('/',(req, res)=>{
-    res.json(server.address())
+    res.json('Welcome to the server')
 })
 
 app.use((err: Errback, req: Request, res: Response, next: NextFunction) => {
