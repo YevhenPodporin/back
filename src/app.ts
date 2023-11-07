@@ -48,7 +48,7 @@ app.use('/image', (req, res) => {
     res.download(process.cwd() + '/src/storage/files' + req.url)
 })
 
-
+console.log('OLEG')
 
 app.use((err: Errback, req: Request, res: Response, next: NextFunction) => {
     res.status(500).json({
