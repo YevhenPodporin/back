@@ -19,7 +19,6 @@ import socketMiddleware from "./middlewares/socketMiddleware";
 import socketController from "./api/controllers/socketController";
 import {Server} from "socket.io";
 import {SocketWithUser} from "./types/ChatTypes";
-import {OAuth2Client} from "google-auth-library";
 
 
 const app: Express = express();
@@ -62,5 +61,3 @@ app.use((err: Errback, req: Request, res: Response, next: NextFunction) => {
 server.listen(port, () => {
     console.log(`⚡️[server]: Server is running at http://localhost:${port}...`);
 });
-
-//TODO доделать гугл авторизацию
