@@ -1,8 +1,8 @@
 import {NextFunction, Request, Response} from 'express';
-import AuthServises from "../servises/auth.servise";
+import AuthServises from "../servises/auth.service";
 import {UserRegisterWithoutFile} from "../../types/UserTypes";
 import {useLoginValidate} from "../../validation/userValidation";
-import UserService from "../servises/user.servise";
+import UserService from "../servises/user.service";
 import {OAuth2Client} from "google-auth-library";
 import {verifyGoogleToken} from "../../utils/jwt";
 

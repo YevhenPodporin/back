@@ -14,11 +14,15 @@ const prisma = new PrismaClient({errorFormat: "pretty"});
 require('dotenv').config();
 
 class authService {
+    public hi(number: number) {
+        return number * number
+    }
+
     public async register(data: UserRegisterRequestBody) {
         const {email, first_name, last_name, date_of_birth, file} = data;
         const password = hashSync(String(data.password), 8);
         try {
-           const user = await prisma.users.create({
+            const user = await prisma.users.create({
                 data: {
                     email,
                     password,
@@ -27,7 +31,7 @@ class authService {
                             first_name,
                             date_of_birth,
                             last_name,
-                            file_path:file? file.filename:null,
+                            file_path: file ? file.filename : null,
                             is_online: true
                         }
                     }
@@ -54,26 +58,26 @@ class authService {
             return {error: `User not found`}
         }
         try {
-            if(user.password){
+            if (user.password) {
                 const checkPassword = compareSync(password, user.password)
 
                 if (!checkPassword) throw createError.Unauthorized('Email address or password not valid')
-                const accessToken = await signAccessToken({email,id:user.id});
+                const accessToken = await signAccessToken({email, id: user.id});
                 return {accessToken}
             }
         } catch (error) {
-            return {error:  error || `Access token expired`}
+            return {error: error || `Access token expired`}
         }
     }
 
-    public async googleLoginOrRegister (data:UserRegisterRequestBody) {
+    public async googleLoginOrRegister(data: UserRegisterRequestBody) {
         const maybeUser = await prisma.users.findFirst({
-            where:{
-                google_id:data.google_id
+            where: {
+                google_id: data.google_id
             }
         })
 
-        if(!maybeUser) {
+        if (!maybeUser) {
             await prisma.users.create({
                 data: {
                     email: data.email,

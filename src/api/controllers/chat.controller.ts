@@ -1,7 +1,7 @@
 import {NextFunction, Request, Response} from 'express';
 import chatService from "../servises/chat.service";
-import {CreateChatType, GetMessages} from "../../types/ChatTypes";
-import {createChatValidate} from "../../validation/userValidation";
+import {CreateChatType, GetMessages, searchMessages} from "../../types/ChatTypes";
+import { createChatValidate } from "../../validation/userValidation";
 
 class chatController {
     public createChat = async (req: Request, res: Response, next: NextFunction) => {
@@ -45,7 +45,6 @@ class chatController {
         const data = await chatService.getMessagesInChat(params)
         return res.status(200).json(data)
     }
-
 }
 
 export default new chatController();

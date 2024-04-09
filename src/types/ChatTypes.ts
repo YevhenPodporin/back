@@ -53,3 +53,16 @@ export interface ChatListResponse extends Chats{
     last_message:string,
     unread_messages:number
 }
+
+export interface searchMessages {
+    value:string,
+    chat_id:Prisma.MessagesUncheckedCreateInput['chat_id']
+    user:JwtPayload
+}
+
+export interface editMessage {
+    value:string,
+    chat_id:Prisma.MessagesUncheckedCreateInput['chat_id']
+    message_id:Prisma.MessagesUncheckedCreateInput['id']
+    user:JwtPayload
+}

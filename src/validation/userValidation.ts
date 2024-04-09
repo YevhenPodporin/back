@@ -13,7 +13,7 @@ import {
     UserUpdateProfileBodyWithoutFile
 } from '../types/UserTypes';
 import {RequestStatus} from "@prisma/client";
-import {CreateChatType} from "../types/ChatTypes";
+import {CreateChatType, searchMessages} from "../types/ChatTypes";
 
 const validStatus = Object.values(RequestStatus)
 

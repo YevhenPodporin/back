@@ -1,31 +1,13 @@
 version: '3'
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "4000:4000"  # Прокидываем порт вашего приложения
-    depends_on:
-      - db  # Зависимость от контейнера базы данных
-    environment:
-      DATABASE_PROVIDER: mysql
-      DATABASE_USERNAME: root
-      DATABASE_PASSWORD: 1995
-      DATABASE_TABLE: test_db
-      DATABASE_HOST: db  # Имя контейнера базы данных
-    networks:
-      - mynet
-
   db:
     image: mysql:5.7
-    environment:
-      MYSQL_ROOT_PASSWORD: 1995
-      MYSQL_DATABASE: test_db
+    restart: always
+    container_name: 'chat_db'
     ports:
       - "3306:3306"
-    networks:
-      - mynet
+    environment:
+      MYSQL_ROOT_USER: root
+      MYSQL_ROOT_PASSWORD: 1995
+      MYSQL_DATABASE: chatdb
 
-networks:
-  mynet:

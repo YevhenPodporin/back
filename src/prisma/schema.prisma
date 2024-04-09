@@ -6,7 +6,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+  url      = "mysql://root:1995@localhost:3306/chatdb"
 }
 
 model Users {
@@ -65,15 +65,15 @@ model Notifications {
 }
 
 model Messages {
-  id         Int      @id @default(autoincrement())
-  chat       Chats    @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  id         Int       @id @default(autoincrement())
+  chat       Chats     @relation(fields: [chat_id], references: [id], onDelete: Cascade)
   chat_id    Int
-  user       Profile  @relation(fields: [sender_id], references: [user_id], onDelete: Cascade)
+  user       Profile   @relation(fields: [sender_id], references: [user_id], onDelete: Cascade)
   sender_id  Int
   message    String
   file       String?
-  updated_at DateTime @default(now())
-  created_at DateTime @default(now())
+  updated_at DateTime?
+  created_at DateTime  @default(now())
 
   @@map("messages")
 }

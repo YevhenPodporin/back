@@ -5,12 +5,10 @@ FROM node:16
 WORKDIR /app
 
 # Копируем зависимости и файлы приложения
-COPY package*.json ./
-COPY tsconfig.json ./
-COPY src ./src
+COPY . .
 
 # Устанавливаем зависимости
-RUN npm install
+RUN npm i
 
 # Собираем TypeScript
 RUN npx prisma migrate dev --schema src/prisma/schema.prisma
@@ -18,4 +16,4 @@ RUN npx prisma generate --schema src/prisma/schema.prisma
 RUN npm run build
 
 # Команда для запуска приложения
-CMD ["npm", "start"]
+CMD ["npm", "run", "start"]

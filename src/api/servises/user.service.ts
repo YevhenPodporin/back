@@ -13,14 +13,14 @@ class userService {
         })
     }
 
-    public async findUser(data:{id?:number, google_id?:number | string}){
+    public async findUser(data:{id?:number, google_id?:number | string}) {
             return prisma.users.findFirst({
-                where:data.google_id?{
-                    google_id:String(data.google_id)
+                where: data.google_id?{
+                    google_id: String(data.google_id)
                 }:{
-                    id:data.id
+                    id: data.id
                 },
-                select:{id:true,email:true}
+                select: {id:true,email:true}
             })
 
     }

@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import compression from 'compression';
-import serverRoutes from "./api/routes/server_routes";
+import serverRoutes from "./api/routes";
 import rateLimit from 'express-rate-limit';
 
 const limiter = rateLimit({
@@ -21,10 +21,9 @@ import {Server} from "socket.io";
 import {SocketWithUser} from "./types/ChatTypes";
 
 
-const app: Express = express();
-const port = process.env.PORT || 4000;
+export const app: Express = express();
 
-const server = createServer(app);
+export const server = createServer(app);
 
 export const io = new Server(server, {
     cors: {
@@ -48,7 +47,7 @@ app.use('/image', (req, res) => {
     res.download(process.cwd() + '/src/storage/files' + req.url)
 })
 
-app.get('/',(req, res)=>{
+app.get('/', (req, res) => {
     res.json('Welcome to the server')
 })
 
@@ -60,6 +59,4 @@ app.use((err: Errback, req: Request, res: Response, next: NextFunction) => {
     next();
 })
 
-server.listen(port, () => {
-    console.log(`⚡️[server]: Server is running at http://localhost:${port}...`);
-});
+module.exports = { app, server }

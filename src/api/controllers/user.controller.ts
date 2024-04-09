@@ -1,5 +1,5 @@
 import {NextFunction, Request, Response} from 'express';
-import userService from "../servises/user.servise";
+import userService from "../servises/user.service";
 
 class userController {
     public getProfile = async (req: Request, res: Response, next:NextFunction) => {

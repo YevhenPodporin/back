@@ -1,5 +1,5 @@
 import {verifyAccessToken} from "../utils/jwt";
-import userService from "../api/servises/user.servise";
+import userService from "../api/servises/user.service";
 import {ExtendedError} from "socket.io/dist/namespace";
 import {SocketWithUser} from "../types/ChatTypes";
 

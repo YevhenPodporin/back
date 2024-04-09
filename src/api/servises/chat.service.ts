@@ -1,5 +1,12 @@
 import {PrismaClient, RequestStatus} from "@prisma/client";
-import { CreateChatType, CreateMessageType, GetMessages, GetRoom} from "../../types/ChatTypes";
+import {
+    CreateChatType,
+    CreateMessageType,
+    editMessage,
+    GetMessages,
+    GetRoom,
+    searchMessages
+} from "../../types/ChatTypes";
 import {getImageUrl} from "../../helpers/getImageUrl";
 import {Notifications} from ".prisma/client";
 
@@ -180,6 +187,42 @@ class chatService {
         }).catch(() => {
             console.log('Nothing to delete')
         })
+    }
+
+    public async searchInChat (data:searchMessages){
+        const {chat_id, value, user} = data
+        if (!user.id) return {error: ''}
+
+        const messages = await prisma.messages.findMany({
+            where: {
+                chat_id: Number(chat_id),
+                OR: [
+                    {chat: {from_user_id: Number(user.id),}},
+                    {chat: {to_user_id: Number(user.id)}},
+                ],
+                AND: {message: {contains:value}}
+            },
+            include:{user:true}
+        })
+
+        return messages.map(message => {
+            return {
+                ...message,
+                user: {...message.user, file_path:getImageUrl(message.user.file_path)}
+            }
+        })
+    }
+
+    public async editMessage(data:editMessage){
+        const message = prisma.messages.update({
+            where:{id:data.message_id},
+            data:{
+                message:data.value,
+                updated_at:new Date()
+            }
+        })
+
+        return message;
     }
 }
 

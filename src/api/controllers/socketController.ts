@@ -1,4 +1,12 @@
-import {Chat, GetMessages, sendMessageType, SocketWithUser, UserTyping} from "../../types/ChatTypes";
+import {
+    Chat,
+    editMessage,
+    GetMessages,
+    searchMessages,
+    sendMessageType,
+    SocketWithUser,
+    UserTyping
+} from "../../types/ChatTypes";
 
 import chatService from "../servises/chat.service";
 import {io} from "../../app";
@@ -10,11 +18,11 @@ const saveFileForMessage = (file: sendMessageType['file']) => {
     if (!file) return null;
     const splitted = file.data.split(';base64,');
     let format = splitted[0].split('/')[1];
-    if(format.includes('webm')) {
-       format = format.split(';')[0]
-    } 
+    if (format.includes('webm')) {
+        format = format.split(';')[0]
+    }
 
-    if (!isValidFileType(format)){
+    if (!isValidFileType(format)) {
         throw new Error('Incorrect file format');
     }
 
@@ -28,7 +36,7 @@ const saveFileForMessage = (file: sendMessageType['file']) => {
     return newFileName
 }
 
-const getRecipient = async (socket:SocketWithUser, room:Chat)=>{
+const getRecipient = async (socket: SocketWithUser, room: Chat) => {
     const sockets = await io.sockets.sockets;
     const socketsToFind = [...sockets.values()] as SocketWithUser[];
 
@@ -36,7 +44,7 @@ const getRecipient = async (socket:SocketWithUser, room:Chat)=>{
         ? room?.from_user_id
         : room?.to_user_id
 
-    const socketToSend =  socketsToFind.find(data => data.user.id === toUserId);
+    const socketToSend = socketsToFind.find(data => data.user.id === toUserId);
     return {socketToSend, toUserId}
 }
 const socketController = async (socket: SocketWithUser) => {
@@ -50,7 +58,7 @@ const socketController = async (socket: SocketWithUser) => {
         if (foundRoom) {
             room = foundRoom
             socket.join(String(room.id))
-        }else{
+        } else {
             socket.disconnect(true)
         }
     })
@@ -58,10 +66,10 @@ const socketController = async (socket: SocketWithUser) => {
     socket.on('getMessages', async (data: GetMessages, callback) => {
         const messages = await chatService.getMessagesInChat({...data, user: socket.user});
 
-        if(data.pagination?.skip === 0){
-           await chatService.removeNotification({
-                to_chat_id:Number(data.chat_id),
-                to_user_id:socket.user.id
+        if (data.pagination?.skip === 0) {
+            await chatService.removeNotification({
+                to_chat_id: Number(data.chat_id),
+                to_user_id: socket.user.id
             })
         }
 
@@ -69,7 +77,7 @@ const socketController = async (socket: SocketWithUser) => {
     })
 
     socket.on("send-message", async ({file, message, chat_id}: sendMessageType, cb: (status: string) => string) => {
-        if(!message && !file)return;
+        if (!message && !file) return;
 
         if ((!socket.rooms.has(String(chat_id)) || !socket.user) && cb) {
             return cb('error')
@@ -85,14 +93,14 @@ const socketController = async (socket: SocketWithUser) => {
             })
             savedMessage.file = getImageUrl(savedMessage.file);
 
-            const {toUserId,socketToSend} = await getRecipient(socket,room)
+            const {toUserId, socketToSend} = await getRecipient(socket, room)
 
-            if(!socketToSend || !socketToSend.rooms.has(String(chat_id)) && toUserId){
+            if (!socketToSend || !socketToSend.rooms.has(String(chat_id)) && toUserId) {
                 const notification = await chatService.addNotification({
-                    to_user_id:toUserId,
-                    to_chat_id:Number(chat_id),
+                    to_user_id: toUserId,
+                    to_chat_id: Number(chat_id),
                 })
-                io.to(String(socketToSend?.id)).emit("notification", {...notification,message})
+                io.to(String(socketToSend?.id)).emit("notification", {...notification, message})
             }
 
             if (socketToSend && !socketToSend.rooms.has(String(chat_id))) {
@@ -101,7 +109,7 @@ const socketController = async (socket: SocketWithUser) => {
                 io.to(String(chat_id)).emit("receive-message", savedMessage)
                 io.to(String(chat_id)).emit('stop-typing')
             }
-        }catch (e){
+        } catch (e) {
             console.log(e)
         }
 
@@ -109,9 +117,9 @@ const socketController = async (socket: SocketWithUser) => {
 
     socket.on('typing', async ({first_name, chat_id}: UserTyping) => {
         const {socketToSend} = await getRecipient(socket, room)
-        if(socketToSend && socketToSend.rooms.has(String(chat_id))){
+        if (socketToSend && socketToSend.rooms.has(String(chat_id))) {
             socket.to(chat_id).emit('someoneTyping', {first_name, id: socket.user.id})
-        }else{
+        } else {
             socket.to(chat_id).emit('stop-typing')
         }
     })
@@ -120,7 +128,25 @@ const socketController = async (socket: SocketWithUser) => {
         socket.to(chat_id).emit('stop-typing')
     })
 
-    socket.on('disconnect', async ()=>{
+    socket.on('searchMessages', async (data: searchMessages, callback) => {
+        const messages = await chatService.searchInChat({...data, user: socket.user});
+        callback(messages)
+    })
+
+    socket.on('editMessage',async (data:editMessage,callback)=>{
+        try{
+            const savedMessage = await chatService.editMessage(data);
+
+            io.to(String(data.chat_id)).emit("editMessage", savedMessage)
+            callback('ok')
+
+        }catch (e){
+            console.log(e)
+        }
+
+    })
+
+    socket.on('disconnect', async () => {
         socket.rooms.clear();
     })
 }
