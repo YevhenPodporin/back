@@ -38,7 +38,7 @@ class authService {
                 },
             })
             const token = await signAccessToken(user);
-            // await prisma.users.delete({where:{email}})
+
             return {token};
         } catch (e) {
             if (e instanceof Prisma.PrismaClientKnownRequestError) {

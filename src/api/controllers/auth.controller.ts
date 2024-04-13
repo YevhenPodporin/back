@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import AuthServises from "../servises/auth.service";
+import AuthService from "../servises/auth.service";
 import { UserRegisterWithoutFile } from "../../types/UserTypes";
 import { useLoginValidate } from "../../validation/userValidation";
 import UserService from "../servises/user.service";
@@ -8,7 +8,7 @@ import { verifyGoogleToken } from "../../utils/jwt";
 class authController {
   public register = async (req: Request, res: Response) => {
     const body: UserRegisterWithoutFile = req.body;
-    const data = await AuthServises.register({ ...body, file: req?.file });
+    const data = await AuthService.register({ ...body, file: req?.file });
     if (data.error) {
       res.status(404).json(data);
     } else {
@@ -26,7 +26,7 @@ class authController {
         name: "validation_error",
       });
     } else {
-      const data = await AuthServises.login(req);
+      const data = await AuthService.login(req);
       if (data?.error) {
         res.status(404).json({
           error: data.error,
@@ -45,7 +45,7 @@ class authController {
     const { google_id, payload } = await verifyGoogleToken(token);
     if (payload && google_id) {
       try {
-        await AuthServises.googleLoginOrRegister({
+        await AuthService.googleLoginOrRegister({
           google_id: google_id,
           email: String(payload.email),
           first_name: String(payload.given_name),
