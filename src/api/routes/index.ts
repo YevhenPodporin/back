@@ -8,12 +8,13 @@ import authController from "../controllers/auth.controller";
 import networkController from "../controllers/network.controller";
 import userController from "../controllers/user.controller";
 import chatRouter from "./chatRouter";
+import TestMiddleware from "../../middlewares/testMiddleware";
 
 router.use(/^\/(?!auth\/).*$/, auth);
 
 /*Authorization roots*/
 router.post("/auth/register", uploadFileMiddleware, authController.register);
-router.post("/auth/login", authController.login);
+router.post("/auth/login", TestMiddleware, authController.login, TestMiddleware);
 router.post("/auth/sign_out", authController.signOut);
 
 router.post("/auth/google", authController.googleAuth);
