@@ -41,7 +41,6 @@ app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
-
 app.use('/api', serverRoutes);
 app.use('/image', (req, res) => {
     res.download(process.cwd() + '/src/storage/files' + req.url)

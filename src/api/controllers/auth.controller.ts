@@ -5,6 +5,7 @@ import {useLoginValidate} from "../../validation/userValidation";
 import UserService from "../servises/user.service";
 import {OAuth2Client} from "google-auth-library";
 import {verifyGoogleToken} from "../../utils/jwt";
+import { Mail } from "../../mailer/nodemailer";
 
 
 class authController {
@@ -21,6 +22,7 @@ class authController {
         }
     }
     public login = async (req: Request, res: Response) => {
+        Mail.sendMail({to: 'usermeen@gmail.com', html: '<h1>OLEGGGGGGGGG</h1>'})
         const errors = useLoginValidate(req.body);
         if (errors) {
             res.status(400).json({

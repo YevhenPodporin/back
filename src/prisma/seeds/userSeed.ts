@@ -6,7 +6,7 @@ export const prisma = new PrismaClient();
 export async function seed() {
     const users = [];
 
-    for (let i = 1; i < 20; i++) {
+    for (let i = 1; i <= 20; i++) {
         const userObj = {
             email: `test${i}@gmail.com`,
             password: hashSync('123456', 8)

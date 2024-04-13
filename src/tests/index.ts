@@ -22,7 +22,7 @@ export const createUserObject = (): userReturn => {
 }
 
 
-export const logginTestUser = async (): Promise<{
+export const loginTestUser = async (): Promise<{
     message: string,
     accessToken: string
 }> => {
